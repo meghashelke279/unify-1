@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unify — Log in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-logo">
+    <div class="mark">Unify</div>
+    <div class="tag">everything about campus, in one place</div>
+  </div>
+
+  <div id="loginError">Enter both fields to continue.</div>
+
+  <div class="login-cards">
+    <div class="login-card student">
+      <span class="role-tab">STUDENT</span>
+      <h3>Student login</h3>
+      <p>See opportunities, notices &amp; events made for you.</p>
+      <div class="field"><label>Roll number / email</label><input id="stuUser" type="text" placeholder="e.g. CS21-014"></div>
+      <div class="field"><label>Password</label><input id="stuPass" type="password" placeholder="••••••••"></div>
+      <button class="btn" onclick="login('student')">Log in as Student</button>
+    </div>
+    <div class="login-card staff">
+      <span class="role-tab">STAFF / CESA / ADMIN</span>
+      <h3>Staff &amp; Admin login</h3>
+      <p>Post notices, run events, review approvals.</p>
+      <div class="field"><label>Staff ID / email</label><input id="staffUser" type="text" placeholder="e.g. faculty.cs@college.edu"></div>
+      <div class="field"><label>Password</label><input id="staffPass" type="password" placeholder="••••••••"></div>
+      <button class="btn teal" onclick="login('staff')">Log in as Staff / Admin</button>
+    </div>
+  </div>
+  <div class="login-foot">Demo login — any details will work. No account? Ask your department admin to add you.</div>
+</div>
+
+<script>
+function login(role){
+  const userId = role === 'student' ? document.getElementById('stuUser').value.trim() : document.getElementById('staffUser').value.trim();
+  const pass = role === 'student' ? document.getElementById('stuPass').value.trim() : document.getElementById('staffPass').value.trim();
+  const err = document.getElementById('loginError');
+  if(!userId || !pass){
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  sessionStorage.setItem('unify_role', role);
+  sessionStorage.setItem('unify_user', userId);
+  window.location.href = role === 'student' ? 'student.html' : 'staff.html';
+}
+
+// If already logged in this session, skip straight to the right portal.
+(function(){
+  const existing = sessionStorage.getItem('unify_role');
+  if(existing === 'student') window.location.href = 'student.html';
+  if(existing === 'staff') window.location.href = 'staff.html';
+})();
+</script>
+</body>
+</html>

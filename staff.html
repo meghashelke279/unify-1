@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unify — Staff &amp; Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="mark">Unify</span>
+      <span class="tag">everything about campus, in one place</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span class="role-badge staff">STAFF / CESA / ADMIN</span>
+      <button class="btn ghost small" onclick="logout()">Log out</button>
+    </div>
+  </div>
+</header>
+
+<section class="section" style="border-bottom:1px solid var(--line);padding-top:32px;">
+  <div class="wrap">
+    <div class="role-strip">
+      <div><b>Staff / Faculty</b>Post notices &amp; opportunities, manage attendance</div>
+      <div><b>CESA member</b>Run events, reply to doubts, send announcements</div>
+      <div><b>Admin</b>Full control — approvals, analytics, platform oversight</div>
+    </div>
+
+    <div class="section-head">
+      <h2>Notice management</h2>
+      <span class="desc">Post once. See who's actually read it.</span>
+    </div>
+    <div class="staff-panel">
+      <h3>New notice</h3>
+      <div class="form-grid">
+        <div class="field"><label>Title</label><input id="noticeTitleInput" type="text" placeholder="e.g. Library timings extended"></div>
+        <div class="field"><label>Category</label>
+          <select id="noticeCatInput"><option value="academic">Academic</option><option value="hostel">Hostel</option><option value="exam">Exams</option></select>
+        </div>
+      </div>
+      <div class="form-grid full">
+        <div class="field"><label>Details</label><textarea id="noticeBodyInput" placeholder="Notice text…"></textarea></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <label style="font-size:12.5px;display:flex;gap:6px;align-items:center;"><input type="checkbox" id="noticeUrgentInput"> Mark as Important/Urgent</label>
+        <button class="btn teal" onclick="publishNotice()">Publish to students</button>
+      </div>
+    </div>
+
+    <div class="staff-panel">
+      <h3>Published notices</h3>
+      <div id="staffNoticeList"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Opportunities &amp; approvals</h2>
+      <span class="desc">Post from here — it appears instantly on the student feed</span>
+    </div>
+    <div class="staff-panel">
+      <h3>Add opportunity</h3>
+      <div class="form-grid">
+        <div class="field"><label>Title</label><input id="oppTitleInput" type="text" placeholder="e.g. Infosys Summer Internship"></div>
+        <div class="field"><label>Type</label>
+          <select id="oppTypeInput"><option value="scholarship">Scholarship</option><option value="internship">Internship</option><option value="competition">Competition</option></select>
+        </div>
+        <div class="field"><label>Deadline</label><input id="oppDeadlineInput" type="date"></div>
+        <div class="field"><label>Amount / value</label><input id="oppValueInput" type="text" placeholder="e.g. ₹50,000 or Certificate"></div>
+      </div>
+      <button class="btn brick" onclick="addOpportunity()">Approve &amp; publish</button>
+      <span id="oppStatus" style="display:block;margin-top:10px;font-size:11.5px;color:var(--teal-deep)"></span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Events — attendance &amp; registrations</h2>
+      <span class="desc">Auto attendee list · mark digital attendance</span>
+    </div>
+    <div class="staff-panel">
+      <h3>AI &amp; Design Workshop — Fri 3:00 PM <span style="font-weight:400;font-size:12.5px;color:var(--ink-soft)">(<span id="attCount">0</span>/4 marked present)</span></h3>
+      <div id="attendeeList"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap layout-2col">
+    <div>
+      <div class="section-head">
+        <h2>Send announcement</h2>
+        <span class="desc">Goes straight to the student notification widget</span>
+      </div>
+      <div class="staff-panel">
+        <div class="form-grid full">
+          <div class="field"><label>Message</label><textarea id="announceInput" placeholder="e.g. Bus timings changed for tomorrow's fest"></textarea></div>
+        </div>
+        <button class="btn" onclick="sendAnnouncement()">Send to all students</button>
+      </div>
+      <div class="staff-panel">
+        <h3>Recently sent</h3>
+        <div id="sentLog" style="font-size:12.5px;color:var(--ink-soft);"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="widget">
+        <h3>Gap detector</h3>
+        <span style="font-size:11.5px;color:var(--ink-soft);display:block;margin-bottom:14px;">Registrations by category this term</span>
+        <div id="gapChart"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>Unify — built for one campus, not ten group chats.</footer>
+
+<script src="shared.js"></script>
+<script>
+requireRole('staff');
+
+let notices = loadStore('notices');
+let opportunities = loadStore('opportunities');
+let notifications = loadStore('notifications');
+let sentLog = loadStore('sentLog');
+let attendees = loadStore('attendees');
+
+let gapData = [
+  {label:'Tech workshops', count:62},
+  {label:'Cultural events', count:24},
+  {label:'Scholarships applied', count:41},
+  {label:'Sports meets', count:12},
+];
+
+/* ---------------- notices ---------------- */
+function publishNotice(){
+  const title = document.getElementById('noticeTitleInput').value.trim();
+  const cat = document.getElementById('noticeCatInput').value;
+  const body = document.getElementById('noticeBodyInput').value.trim();
+  const urgent = document.getElementById('noticeUrgentInput').checked;
+  if(!title){ alert('Add a title first.'); return; }
+  const n = {id:Date.now(), title, cat, urgent, reads:'0/210', body: body || '—'};
+  notices.unshift(n);
+  notifications.unshift({t:`New notice: ${title}`, when:'Just now'});
+  saveStore('notices', notices);
+  saveStore('notifications', notifications);
+  document.getElementById('noticeTitleInput').value='';
+  document.getElementById('noticeBodyInput').value='';
+  document.getElementById('noticeUrgentInput').checked=false;
+  renderStaffNotices();
+}
+function renderStaffNotices(){
+  document.getElementById('staffNoticeList').innerHTML = notices.map(n=>`
+    <div class="manage-row">
+      <div>
+        <div class="mr-title">${n.urgent? '⚑ ':''}${n.title}</div>
+        <div class="mr-meta">${n.cat} · read receipts ${n.reads}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="tag-pill published">Published</span>
+        <button class="btn ghost small" onclick="deleteNotice(${n.id})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+function deleteNotice(id){
+  notices = notices.filter(n=>n.id!==id);
+  saveStore('notices', notices);
+  renderStaffNotices();
+}
+
+/* ---------------- opportunities ---------------- */
+function addOpportunity(){
+  const title = document.getElementById('oppTitleInput').value.trim();
+  const cat = document.getElementById('oppTypeInput').value;
+  const dl = document.getElementById('oppDeadlineInput').value;
+  const value = document.getElementById('oppValueInput').value.trim() || '—';
+  const status = document.getElementById('oppStatus');
+  if(!title || !dl){ status.textContent='Add a title and deadline.'; status.style.color='var(--brick)'; return; }
+  opportunities.unshift({id:Date.now(), title, cat, value, deadline:new Date(dl).toISOString()});
+  notifications.unshift({t:`New opportunity: ${title}`, when:'Just now'});
+  saveStore('opportunities', opportunities);
+  saveStore('notifications', notifications);
+  document.getElementById('oppTitleInput').value='';
+  document.getElementById('oppDeadlineInput').value='';
+  document.getElementById('oppValueInput').value='';
+  status.style.color='var(--teal-deep)';
+  status.textContent = `Published — now visible on the student feed.`;
+}
+
+/* ---------------- attendance ---------------- */
+function renderAttendees(){
+  document.getElementById('attendeeList').innerHTML = attendees.map((a,i)=>`
+    <div class="attendee-row">
+      <label><input type="checkbox" ${a.present?'checked':''} onchange="toggleAttendee(${i})"> ${a.name} <span style="color:var(--ink-soft)">(${a.reg})</span></label>
+      <span style="font-size:11.5px;color:${a.present?'var(--teal-deep)':'var(--ink-soft)'}">${a.present?'Present':'Not marked'}</span>
+    </div>`).join('');
+  document.getElementById('attCount').textContent = attendees.filter(a=>a.present).length;
+}
+function toggleAttendee(i){
+  attendees[i].present = !attendees[i].present;
+  saveStore('attendees', attendees);
+  renderAttendees();
+}
+
+/* ---------------- announcements ---------------- */
+function sendAnnouncement(){
+  const inp = document.getElementById('announceInput');
+  const msg = inp.value.trim();
+  if(!msg) return;
+  notifications.unshift({t: msg, when:'Just now'});
+  sentLog.unshift({t: msg, when: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});
+  saveStore('notifications', notifications);
+  saveStore('sentLog', sentLog);
+  inp.value='';
+  renderSentLog();
+}
+function renderSentLog(){
+  const el = document.getElementById('sentLog');
+  if(!sentLog.length){ el.textContent='Nothing sent yet.'; return; }
+  el.innerHTML = sentLog.map(s=>`<div class="notif-item"><b>${s.t}</b>${s.when}</div>`).join('');
+}
+
+/* ---------------- gap detector ---------------- */
+function renderGapChart(){
+  const max = Math.max(...gapData.map(g=>g.count));
+  document.getElementById('gapChart').innerHTML = gapData.map(g=>`
+    <div class="gap-bar-row">
+      <div class="glabel">${g.label}</div>
+      <div class="gap-track"><div class="gap-fill" style="width:${(g.count/max*100).toFixed(0)}%"></div></div>
+      <div class="gap-count">${g.count}</div>
+    </div>`).join('');
+}
+
+/* ---------------- init ---------------- */
+renderStaffNotices();
+renderAttendees();
+renderSentLog();
+renderGapChart();
+</script>
+</body>
+</html>
