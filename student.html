@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unify — Student</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="mark">Unify</span>
+      <span class="tag">everything about campus, in one place</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span class="role-badge student">STUDENT</span>
+      <button class="btn ghost small" onclick="logout()">Log out</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Stop hunting for it on WhatsApp.</h1>
+      <p class="lede">Scholarships, internships, events and notices in one feed — with reminders and attendance tracked automatically on the other end.</p>
+      <div class="stat-row">
+        <div class="stat"><span class="n" id="statOpp">—</span><span class="l">open opportunities</span></div>
+        <div class="stat"><span class="n" id="statNotice">—</span><span class="l">notices today</span></div>
+        <div class="stat"><span class="n">6</span><span class="l">events this month</span></div>
+        <div class="stat"><span class="n">94%</span><span class="l">notice read rate</span></div>
+      </div>
+    </div>
+    <div class="pinboard">
+      <div class="pin-card pin-1"><b>Merit Scholarship 2026</b><span>Closes in 3 days</span></div>
+      <div class="pin-card pin-2"><b>Hostel maintenance notice</b><span>Posted by Admin · Urgent</span></div>
+      <div class="pin-card pin-3"><b>AI &amp; Design Workshop</b><span>Fri, 3:00 PM · 62 registered</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap layout-2col">
+    <div>
+      <div class="section-head">
+        <h2>Opportunities feed</h2>
+        <span class="desc">Scholarships, internships &amp; competitions — one search, one place</span>
+      </div>
+      <div class="search-bar">
+        <input id="oppSearch" type="text" placeholder="Search scholarships, internships, competitions…" oninput="filterOpps()">
+        <button onclick="filterOpps()">Search</button>
+      </div>
+      <div class="chip-row" id="oppChips">
+        <span class="chip active" data-cat="all" onclick="setOppChip(this)">All</span>
+        <span class="chip" data-cat="scholarship" onclick="setOppChip(this)">Scholarships</span>
+        <span class="chip" data-cat="internship" onclick="setOppChip(this)">Internships</span>
+        <span class="chip" data-cat="competition" onclick="setOppChip(this)">Competitions</span>
+      </div>
+      <div class="card-list" id="oppList"></div>
+    </div>
+
+    <div>
+      <div class="widget">
+        <h3>Your deadlines</h3>
+        <div id="deadlineWidget"></div>
+      </div>
+      <div class="widget">
+        <h3>Notifications</h3>
+        <div id="notifWidget"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Notices &amp; circulars</h2>
+      <span class="desc">Filtered to what applies to you — no more scrolling ten WhatsApp groups</span>
+    </div>
+    <div class="chip-row">
+      <span class="chip active" onclick="setNoticeChip(this,'all')">All</span>
+      <span class="chip" onclick="setNoticeChip(this,'academic')">Academic</span>
+      <span class="chip" onclick="setNoticeChip(this,'hostel')">Hostel</span>
+      <span class="chip" onclick="setNoticeChip(this,'exam')">Exams</span>
+    </div>
+    <div class="card-list" id="noticeList"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Events &amp; workshops</h2>
+      <span class="desc">Register in one tap · get a reminder · rate it after</span>
+    </div>
+    <div class="card-list" id="eventList"></div>
+
+    <div style="margin-top:32px;">
+      <div class="section-head" style="margin-bottom:8px;">
+        <h2 style="font-size:18px;">Past events &amp; your history</h2>
+      </div>
+      <div class="accordion" id="historyAccordion"></div>
+    </div>
+
+    <div class="doubt-box">
+      <h3 style="margin:0 0 4px;font-size:14px;">Doubts on "AI &amp; Design Workshop"</h3>
+      <span style="font-size:11.5px;color:var(--ink-soft)">Ask something — a CESA member or the organiser will reply here</span>
+      <div id="doubtList" style="margin-top:14px;"></div>
+      <div class="ask-row">
+        <input id="doubtInput" type="text" placeholder="Type your doubt…">
+        <button class="btn small" onclick="askDoubt()">Ask</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>Unify — built for one campus, not ten group chats.</footer>
+
+<script src="shared.js"></script>
+<script>
+requireRole('student');
+
+let opportunities = loadStore('opportunities');
+let notices = loadStore('notices');
+let notifications = loadStore('notifications');
+let doubts = loadStore('doubts');
+let events = [
+  {id:1, title:'AI & Design Workshop', when:'Fri, 3:00 PM · Seminar Hall', registered:62},
+];
+let deadlines = [
+  {t:'Merit Scholarship application', d:'3 days'},
+  {t:'Hackathon team registration', d:'15 days'},
+];
+
+let oppChip = 'all';
+let noticeChip = 'all';
+
+/* ---------------- opportunities ---------------- */
+function setOppChip(el){
+  document.querySelectorAll('#oppChips .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  oppChip = el.dataset.cat;
+  filterOpps();
+}
+function filterOpps(){
+  const q = document.getElementById('oppSearch').value.toLowerCase();
+  const list = opportunities.filter(o =>
+    (oppChip==='all' || o.cat===oppChip) && o.title.toLowerCase().includes(q)
+  );
+  renderOpps(list);
+  document.getElementById('statOpp').textContent = opportunities.length;
+}
+function renderOpps(list){
+  const el = document.getElementById('oppList');
+  if(!list.length){ el.innerHTML = '<div style="padding:20px 0;color:var(--ink-soft);font-size:13px;">Nothing matches — try a different search or category.</div>'; return; }
+  el.innerHTML = list.map(o=>{
+    const dl = daysLeft(o.deadline);
+    const urgentClass = dl<=5 ? '' : 'calm';
+    return `<div class="idx-card">
+      <div class="idx-tab ${dl<=5?'urgent':''}">${o.cat.slice(0,4).toUpperCase()}</div>
+      <div class="idx-body">
+        <b class="title">${o.title}</b>
+        <div class="meta"><span>${o.value}</span><span>Deadline ${new Date(o.deadline).toDateString().slice(4)}</span></div>
+      </div>
+      <div class="idx-right">
+        <span class="countdown ${urgentClass}">${dl} days remaining</span>
+        <button class="btn ghost small" onclick="alert('Application started — you can track this under Deadlines.')">Apply</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- notices ---------------- */
+function setNoticeChip(el, cat){
+  el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  noticeChip = cat;
+  renderNotices();
+}
+function renderNotices(){
+  const el = document.getElementById('noticeList');
+  const list = notices.filter(n=> noticeChip==='all' || n.cat===noticeChip)
+                       .sort((a,b)=> (b.urgent - a.urgent));
+  el.innerHTML = list.map(n=>`
+    <div class="idx-card">
+      <div class="idx-tab ${n.urgent?'urgent':''}">${n.urgent?'URG':n.cat.slice(0,3).toUpperCase()}</div>
+      <div class="idx-body">
+        <b class="title">${n.title}</b>
+        <div class="meta"><span>${n.body}</span></div>
+      </div>
+      <div class="idx-right"><span class="countdown calm">${n.cat}</span></div>
+    </div>`).join('');
+  document.getElementById('statNotice').textContent = notices.length;
+}
+
+/* ---------------- events + history ---------------- */
+function renderEvents(){
+  document.getElementById('eventList').innerHTML = events.map(e=>`
+    <div class="idx-card">
+      <div class="idx-tab event">EVT</div>
+      <div class="idx-body">
+        <b class="title">${e.title}</b>
+        <div class="meta"><span>${e.when}</span><span>${e.registered} registered</span></div>
+      </div>
+      <div class="idx-right"><button class="btn small" onclick="alert('Registered! A reminder will be sent an hour before.')">Register</button></div>
+    </div>`).join('');
+
+  document.getElementById('historyAccordion').innerHTML = `
+    <div>
+      <div class="acc-head" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
+        <span>Orientation Week — Aug 2026</span><span class="arrow">+</span>
+      </div>
+      <div class="acc-body">Attended · 4.6/5 avg rating · 340 students checked in.</div>
+    </div>
+    <div>
+      <div class="acc-head" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
+        <span>Blood Donation Camp — Jul 2026</span><span class="arrow">+</span>
+      </div>
+      <div class="acc-body">Attended · 4.9/5 avg rating · 88 donors registered.</div>
+    </div>`;
+}
+
+/* ---------------- doubts ---------------- */
+function renderDoubts(){
+  document.getElementById('doubtList').innerHTML = doubts.map(d=>`
+    <div class="doubt-item">
+      <b>${d.q}</b>
+      ${d.a ? `<div class="doubt-reply">${d.a}</div>` : `<div class="doubt-reply" style="color:var(--mustard-deep)">Awaiting reply from CESA…</div>`}
+    </div>`).join('');
+}
+function askDoubt(){
+  const inp = document.getElementById('doubtInput');
+  if(!inp.value.trim()) return;
+  doubts.push({q:inp.value.trim(), a:null});
+  saveStore('doubts', doubts);
+  inp.value='';
+  renderDoubts();
+}
+
+/* ---------------- sidebar widgets ---------------- */
+function renderDeadlineWidget(){
+  document.getElementById('deadlineWidget').innerHTML = deadlines.map(d=>`
+    <div class="deadline-row"><span>${d.t}</span><span class="d">${d.d}</span></div>`).join('');
+}
+function renderNotifWidget(){
+  document.getElementById('notifWidget').innerHTML = notifications.map(n=>`
+    <div class="notif-item"><b>${n.t}</b>${n.when}</div>`).join('');
+}
+
+/* ---------------- init ---------------- */
+filterOpps();
+renderNotices();
+renderEvents();
+renderDoubts();
+renderDeadlineWidget();
+renderNotifWidget();
+</script>
+</body>
+</html>
